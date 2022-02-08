@@ -1,3 +1,4 @@
+from array import array
 import random
 import string
 from typing import List
@@ -10,40 +11,40 @@ from ninja import Router
 from pydantic import UUID4
 
 from account.authorization import GlobalAuth
-from commerce.models import Address, Product, Category, City, Vendor, Item, Order, OrderStatus
-from commerce.schemas import AddressSchema, AddressesOut, CheckoutSchema, ProductOut, CitiesOut, CitySchema, VendorOut, ItemOut, ItemSchema, ItemCreate
+from commerce.models import Address, Product, Category, Item, Order, OrderStatus, Rating
+from commerce.schemas import AddressSchema, AddressesOut, CheckoutSchema,CategoryOut, ProductOut, CitiesOut, CitySchema, ItemOut, ItemSchema, ItemCreate, RatingSchema
 from config.utils.schemas import MessageOut
 
 products_controller = Router(tags=['products'])
 address_controller = Router(tags=['addresses'])
-vendor_controller = Router(tags=['vendors'])
+address_controller = Router(tags=['addresses'])
 order_controller = Router(tags=['orders'])
 user_controller = Router(tags=['users'])
+category_controller = Router(tags=['categories'])
+rating_controller = Router(tags=['rating'])
 
 User = get_user_model()
 
-@user_controller.get('/users')
-def list_users(request):
-    user = User.objects.all().values()
-    return JsonResponse({"Users": list(user)})
-
-@vendor_controller.get('', auth=GlobalAuth(),response=List[VendorOut])
-def list_vendors(request):
-    return Vendor.objects.all()
+# @user_controller.get('/users')
+# def list_users(request):
+#     user = User.objects.all().values()
+#     return JsonResponse({"Users": list(user)})
 
 
-@products_controller.get('', auth=GlobalAuth(),response={
+# (todo)sending array of categories as filter to return matching products
+@products_controller.get('',response={
     200: List[ProductOut],
     404: MessageOut
 })
 def list_products(
-        request, *,
+        request,
+        *,
         q: str = None,
         price_from: int = None,
         price_to: int = None,
-        vendor=None,
+        categories = None,
 ):
-    products_qs = Product.objects.filter(is_active=True).select_related('merchant', 'vendor', 'category', 'label')
+    products_qs = Product.objects.filter(is_active=True).prefetch_related('category')
 
     if not products_qs:
         return 404, {'detail': 'No products found'}
@@ -59,66 +60,18 @@ def list_products(
     if price_to:
         products_qs = products_qs.filter(discounted_price__lte=price_to)
 
-    if vendor:
-        products_qs = products_qs.filter(vendor_id=vendor)
+    
+    
 
     return products_qs
 
 
-"""
-# product = Product.objects.all().select_related('merchant', 'category', 'vendor', 'label')
-    # print(product)
-    #
-    # order = Product.objects.all().select_related('address', 'user').prefetch_related('items')
-
-    # try:
-    #     one_product = Product.objects.get(id='8d3dd0f1-2910-457c-89e3-1b0ed6aa720a')
-    # except Product.DoesNotExist:
-    #     return {"detail": "Not found"}
-    # print(one_product)
-    #
-    # shortcut_function = get_object_or_404(Product, id='8d3dd0f1-2910-457c-89e3-1b0ed6aa720a')
-    # print(shortcut_function)
-
-    # print(type(product))
-    # print(product.merchant.name)
-    # print(type(product.merchant))
-    # print(type(product.category))
-
-
-Product <- Merchant, Label, Category, Vendor
-
-Retrieve 1000 Products form DB
-
-products = Product.objects.all()[:1000] (select * from product limit 1000)
-
-for p in products:
-    print(p)
-    
-for every product, we retrieve (Merchant, Label, Category, Vendor) records
-
-Merchant.objects.get(id=p.merchant_id) (select * from merchant where id = 'p.merchant_id')
-Label.objects.get(id=p.label_id) (select * from merchant where id = 'p.label_id')
-Category.objects.get(id=p.category_id) (select * from merchant where id = 'p.category_id')
-Vendor.objects.get(id=p.vendor_id) (select * from merchant where id = 'p.vendor_id')
-
-4*1000+1
-
-Solution: Eager loading
-
-products = (select * from product limit 1000)
-
-mids = [p1.merchant_id, p2.merchant_id, ...]
-[p1.label_id, p2.label_id, ...]
-.
-.
-.
-
-select * from merchant where id in (mids) * 4 for (label, category and vendor)
-
-4+1
-
-"""
+@products_controller.get('/{id}',auth=GlobalAuth(), response={
+    200: ProductOut,
+    404: MessageOut
+})
+def retrieve_product(request, id: UUID4):
+    return get_object_or_404(Product, id=id)
 
 
 @address_controller.get('' ,auth=GlobalAuth())
@@ -126,60 +79,9 @@ def list_addresses(request):
     pass
 
 
-# @products_controller.get('categories', response=List[CategoryOut])
-# def list_categories(request):
-#     return Category.objects.all()
-
-
-@address_controller.get('cities',auth=GlobalAuth(), response={
-    200: List[CitiesOut],
-    404: MessageOut
-})
-def list_cities(request):
-    cities_qs = City.objects.all()
-
-    if cities_qs:
-        return cities_qs
-
-    return 404, {'detail': 'No cities found'}
-
-
-@address_controller.get('cities/{id}', auth=GlobalAuth(),response={
-    200: CitiesOut,
-    404: MessageOut
-})
-def retrieve_city(request, id: UUID4):
-    return get_object_or_404(City, id=id)
-
-
-@address_controller.post('cities', auth=GlobalAuth(),response={
-    201: CitiesOut,
-    400: MessageOut
-})
-def create_city(request, city_in: CitySchema):
-    city = City(**city_in.dict())
-    city.save()
-    return 201, city
-
-
-@address_controller.put('cities/{id}', auth=GlobalAuth(),response={
-    200: CitiesOut,
-    400: MessageOut
-})
-def update_city(request, id: UUID4, city_in: CitySchema):
-    city = get_object_or_404(City, id=id)
-    city.name = city_in.name
-    city.save()
-    return 200, city
-
-
-@address_controller.delete('cities/{id}', auth=GlobalAuth(),response={
-    204: MessageOut
-})
-def delete_city(request, id: UUID4):
-    city = get_object_or_404(City, id=id)
-    city.delete()
-    return 204, {'detail': ''}
+@category_controller.get('categories', response=List[CategoryOut])
+def list_categories(request):
+    return Category.objects.all()
 
 
 @order_controller.get('cart',auth=GlobalAuth(), response={
@@ -262,7 +164,7 @@ def create_order(request):
         ordered=False,
     )
 
-    user_items = Item.objects.filter(user=User.objects.first()).filter(ordered=False)
+    user_items = Item.objects.filter(user=user).filter(ordered=False)
 
     order_qs.items.add(*user_items)
     order_qs.total = order_qs.order_total
@@ -273,7 +175,7 @@ def create_order(request):
 
 
 ############ Adresses CRUD
-@order_controller.post('/orders/item/{id}/increase-quantity',auth=GlobalAuth(), response={
+@order_controller.post('/item/{id}/increase-quantity',auth=GlobalAuth(), response={
     200: MessageOut,
 })
 def increase_item_quantity(request, id: UUID4):
@@ -285,6 +187,14 @@ def increase_item_quantity(request, id: UUID4):
 
     return 200, {'detail': 'Item quantity increased successfully!'}
 
+
+
+@order_controller.put('/checkout/{id}',auth=GlobalAuth(), response=MessageOut)
+def checkout(request, id: UUID4, checkout_in: CheckoutSchema):
+    order = get_object_or_404(Order, id=id)
+    for key, value in checkout_in:
+        setattr(order, key, value)
+    return {'detail': 'order checkout successfully'}
 
 
 @address_controller.get('addresses', auth=GlobalAuth(),response={
@@ -339,10 +249,12 @@ def delete_address(request, id: UUID4):
     return 204, {'detail': ''}
 
 
-@order_controller.put('/api/orders/checkout/{id}',auth=GlobalAuth(), response=MessageOut)
 
-def checkout(request, id: UUID4, checkout_in: CheckoutSchema):
-    order = get_object_or_404(Order, id=id)
-    for key, value in checkout_in:
-        setattr(order, key, value)
-    return {'detail': 'order checkout successfully'}
+@rating_controller.post('rating',auth=GlobalAuth(), response={
+    200: MessageOut,
+})
+def rating(request, rating_in: RatingSchema):
+    user = get_object_or_404(User, id=request.auth['pk'])
+
+    Rating.objects.create(**rating_in.dict() , user=user)
+    return 200, {'detail': 'Added successfully'}

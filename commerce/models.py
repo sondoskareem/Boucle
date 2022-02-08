@@ -12,26 +12,13 @@ User = get_user_model()
 class Product(Entity):
     name = models.CharField(verbose_name='name', max_length=255)
     description = models.TextField('description', null=True, blank=True)
-    weight = models.FloatField('weight', null=True, blank=True)
-    width = models.FloatField('width', null=True, blank=True)
-    height = models.FloatField('height', null=True, blank=True)
-    length = models.FloatField('length', null=True, blank=True)
     qty = models.DecimalField('qty', max_digits=10, decimal_places=2)
-    cost = models.DecimalField('cost', max_digits=10, decimal_places=2)
     price = models.DecimalField('price', max_digits=10, decimal_places=2)
     discounted_price = models.DecimalField('discounted price', max_digits=10, decimal_places=2)
-    vendor = models.ForeignKey('commerce.Vendor', verbose_name='vendor', related_name='products',
-                               on_delete=models.SET_NULL,
-                               null=True, blank=True)
-    category = models.ForeignKey('commerce.Category', verbose_name='category', related_name='products',
-                                 null=True,
-                                 blank=True,
-                                 on_delete=models.SET_NULL)
-    merchant = models.ForeignKey('commerce.Merchant', verbose_name='merchant', related_name='products',
-                                 null=True,
-                                 blank=True,
-                                 on_delete=models.SET_NULL)
-    is_featured = models.BooleanField('is featured')
+    
+
+    category = models.ManyToManyField('commerce.Category', verbose_name='category', related_name='product')                                    
+    
     is_active = models.BooleanField('is active')
     label = models.ForeignKey('commerce.Label', verbose_name='label', related_name='products', null=True, blank=True,
                               on_delete=models.CASCADE)
@@ -45,11 +32,11 @@ class Order(Entity):
                              on_delete=models.CASCADE)
     address = models.ForeignKey('commerce.Address', verbose_name='address', null=True, blank=True,
                                 on_delete=models.CASCADE)
-    total = models.DecimalField('total', blank=True, null=True, max_digits=1000, decimal_places=0)
+    total = models.DecimalField('total', blank=True, null=True, max_digits=65, decimal_places=0)
     status = models.ForeignKey('commerce.OrderStatus', verbose_name='status', related_name='orders',
                                on_delete=models.CASCADE)
     note = models.CharField('note', null=True, blank=True, max_length=255)
-    ref_code = models.CharField('ref code', max_length=255)
+    ref_code = models.CharField('ref_code', max_length=255 , null=True)
     ordered = models.BooleanField('ordered')
     items = models.ManyToManyField('commerce.Item', verbose_name='items', related_name='order')
 
@@ -128,8 +115,13 @@ class Category(Entity):
     def children(self):
         return self.children
 
-class Merchant(Entity):
+class Label(Entity):
+    
     name = models.CharField('name', max_length=255)
+
+    class Meta:
+        verbose_name = 'label'
+        verbose_name_plural = 'labels'
 
     def __str__(self):
         return self.name
@@ -155,37 +147,6 @@ class ProductImage(Entity):
             img.save(self.image.path)
             # print(self.image.path)
 
-
-class Label(Entity):
-    name = models.CharField('name', max_length=255)
-
-    class Meta:
-        verbose_name = 'label'
-        verbose_name_plural = 'labels'
-
-    def __str__(self):
-        return self.name
-
-
-class Vendor(Entity):
-    name = models.CharField('name', max_length=255)
-    image = models.ImageField('image', upload_to='vendor/')
-
-    def __str__(self):
-        return self.name
-
-    def save(self, force_insert=False, force_update=False, using=None,
-             update_fields=None, *args, **kwargs):
-        super().save(*args, **kwargs)
-
-        img = Image.open(self.image.path)
-        if img.height > 500 or img.width > 500:
-            output_size = (500, 500)
-            img.thumbnail(output_size)
-            img.save(self.image.path)
-            # print(self.image.path)
-
-
 class City(Entity):
     name = models.CharField('city', max_length=255)
 
@@ -208,3 +169,24 @@ class Address(Entity):
 
     def __str__(self):
         return f'{self.user.first_name} - {self.address1} - {self.address2} - {self.phone}'
+
+class Rating(Entity):
+    user = models.ForeignKey(User, verbose_name='user', related_name='ratings',
+                             on_delete=models.CASCADE)
+    rating = models.IntegerField('rating', max_length=255)
+    order = models.ForeignKey('commerce.Order', verbose_name='order', related_name='ratings', null=True, blank=True,
+                              on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f'{self.user.first_name} - {self.rating}'
+
+
+class Social(Entity):
+    phone = models.CharField('phone', max_length=255)
+    email = models.CharField('email', max_length=255)
+    facebook = models.CharField('facebook', max_length=255)
+    twitter = models.CharField('twitter', max_length=255)
+    address = models.CharField('address', max_length=255)
+
+    def __str__(self):
+        return 'social'

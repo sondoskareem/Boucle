@@ -17,18 +17,20 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path
 from ninja import NinjaAPI
+from django.conf.urls import include
 
 from account.controllers import account_controller
-from commerce.controllers import  products_controller,user_controller,address_controller, vendor_controller, order_controller
+from commerce.controllers import  products_controller,user_controller,address_controller, order_controller,rating_controller
 from config import settings
 
 api = NinjaAPI()
+
+api.add_router('auth', account_controller)
 api.add_router('users', user_controller)
 api.add_router('products', products_controller)
 api.add_router('addresses', address_controller)
-api.add_router('vendors', vendor_controller)
 api.add_router('orders', order_controller)
-api.add_router('auth', account_controller)
+api.add_router('rating', rating_controller)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -36,6 +38,10 @@ urlpatterns = [
 
 ]
 
+
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+urlpatterns += [path('silk/', include('silk.urls', namespace='silk'))]
