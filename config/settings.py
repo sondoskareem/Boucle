@@ -80,14 +80,17 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'boucle',
-        'USER': 'sundus',
-        'PASSWORD': 'sundus',
-        'HOST': '127.0.0.1',
-        'PORT': '8889',
-        'OPTIONS': {
-        'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"
+        # 'ENGINE': 'django.db.backends.mysql',
+        # 'NAME': 'boucle',
+        # 'USER': 'sundus',
+        # 'PASSWORD': 'sundus',
+        # 'HOST': '127.0.0.1',
+        # 'PORT': '8889',
+        # 'OPTIONS': {
+        # 'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"
+
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
 }

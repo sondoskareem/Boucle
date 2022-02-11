@@ -15,4 +15,4 @@ six==1.16.0
 sqlparse==0.4.2
 typing-extensions==3.10.0.2
 pymysql
-silk
+silk==4.2.0
