@@ -39,7 +39,6 @@ INSTALLED_APPS = [
 
     'account',
     'commerce',
-    django_heroku.settings(locals())
 ]
 
 MIDDLEWARE = [
@@ -137,3 +136,4 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'account.User'
+django_heroku.settings(locals())
