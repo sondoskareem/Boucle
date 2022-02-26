@@ -40,7 +40,6 @@ INSTALLED_APPS = [
 
     'account',
     'commerce',
-    django_heroku.settings(locals())
 ]
 
 MIDDLEWARE = [
