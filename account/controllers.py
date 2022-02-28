@@ -23,9 +23,10 @@ def signup(request, account_in: AccountCreate):
         User.objects.get(email=account_in.email)
     except User.DoesNotExist:
         new_user = User.objects.create_user(
-            first_name=account_in.first_name,
-            last_name=account_in.last_name,
+            username=account_in.username,
+            address1=account_in.address1,
             email=account_in.email,
+            phone_number=account_in.phone_number,
             password=account_in.password1
         )
 

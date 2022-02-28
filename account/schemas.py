@@ -5,12 +5,12 @@ from pydantic import EmailStr, Field
 
 
 class AccountCreate(Schema):
-    first_name: str
-    last_name: str
-    email: EmailStr
+    username: str
+    address1: str
     password1: str = Field(min_length=8)
     password2: str
-
+    phone_number: str
+    email: EmailStr
 
 class AccountOut(Schema):
     first_name: str
