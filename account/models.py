@@ -43,7 +43,7 @@ class CustomUserManager(UserManager):
 
 class User(AbstractUser, Entity):
 
-    username = models.NOT_PROVIDED
+    username = models.CharField(max_length=255 ,null=True, blank=True)
     email = models.EmailField(_('email address'), unique=True ,null=True, blank=True)
     phone_number = models.CharField(max_length=15, null=True, blank=True)
     address1 = models.CharField(max_length=255, null=True, blank=True)

@@ -14,6 +14,7 @@ class AccountCreate(Schema):
 
 class AccountOut(Schema):
     first_name: str
+    username: str
     last_name: str
     email: EmailStr
     phone_number: Optional[str]
@@ -36,6 +37,7 @@ class SigninSchema(Schema):
 
 class AccountUpdate(Schema):
     first_name: str
+    username: str
     last_name: str
     phone_number: Optional[str]
     address1: str
